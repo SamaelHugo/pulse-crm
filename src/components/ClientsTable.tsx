@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { ClientData } from "@/lib/types";
+import Modal, { FormInput, FormSelect } from "@/components/Modal";
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -99,6 +100,13 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+
+  // Modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [formData, setFormData] = useState({ name: "", company: "", email: "", phone: "", status: "lead" });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Debounced search
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -199,6 +207,44 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
     return pages;
   }, [page, totalPages]);
 
+  // ── Create Client ─────────────────────────────────────────
+  const handleCreate = async () => {
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim()) errors.name = "Обязательное поле";
+    if (!formData.company.trim()) errors.company = "Обязательное поле";
+    if (!formData.email.trim()) errors.email = "Обязательное поле";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = "Некорректный email";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    setCreating(true);
+    setCreateError("");
+    setFieldErrors({});
+
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setCreateError(json.error || "Ошибка создания");
+        return;
+      }
+      setShowCreateModal(false);
+      setFormData({ name: "", company: "", email: "", phone: "", status: "lead" });
+      router.refresh();
+    } catch {
+      setCreateError("Ошибка сети");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* ── Header ─────────────────────────────────────────── */}
@@ -209,7 +255,10 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
             {clients.length}
           </span>
         </div>
-        <button className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover">
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
+        >
           + Новый клиент
         </button>
       </div>
@@ -416,6 +465,69 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
           </div>
         </>
       )}
+
+      {/* ── Create Client Modal ──────────────────────────── */}
+      <Modal open={showCreateModal} onClose={() => { setShowCreateModal(false); setCreateError(""); setFieldErrors({}); }} title="Новый клиент">
+        <div className="space-y-4">
+          {createError && (
+            <div className="rounded-lg bg-danger-muted px-4 py-2.5 text-sm text-danger">{createError}</div>
+          )}
+          <FormInput
+            label="Имя *"
+            placeholder="Иван Петров"
+            value={formData.name}
+            onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+            error={fieldErrors.name}
+          />
+          <FormInput
+            label="Компания *"
+            placeholder="ООО «Компания»"
+            value={formData.company}
+            onChange={(e) => setFormData((p) => ({ ...p, company: e.target.value }))}
+            error={fieldErrors.company}
+          />
+          <FormInput
+            label="Email *"
+            type="email"
+            placeholder="ivan@company.ru"
+            value={formData.email}
+            onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+            error={fieldErrors.email}
+          />
+          <FormInput
+            label="Телефон"
+            type="tel"
+            placeholder="+7 (999) 123-45-67"
+            value={formData.phone}
+            onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+          />
+          <FormSelect
+            label="Статус"
+            value={formData.status}
+            onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value }))}
+            options={[
+              { value: "lead", label: "Лид" },
+              { value: "active", label: "Активный" },
+              { value: "inactive", label: "Неактивный" },
+            ]}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => { setShowCreateModal(false); setCreateError(""); setFieldErrors({}); }}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={handleCreate}
+              disabled={creating}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
+            >
+              {creating ? "Создание..." : "Создать"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

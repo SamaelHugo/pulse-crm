@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ClientData, DealData, NoteData } from "@/lib/types";
+import Modal, { FormInput, FormSelect } from "@/components/Modal";
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -92,8 +94,27 @@ interface Props {
 // ── Component ────────────────────────────────────────────
 
 export default function ClientDetail({ client, deals, notes }: Props) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("deals");
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ name: "", company: "", email: "", phone: "", status: "" });
+  const [editError, setEditError] = useState("");
+  const [editFieldErrors, setEditFieldErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+
+  // New deal modal
+  const [showDealModal, setShowDealModal] = useState(false);
+  const [dealData, setDealData] = useState({ title: "", value: "", stage: "lead" });
+  const [dealError, setDealError] = useState("");
+  const [dealFieldErrors, setDealFieldErrors] = useState<Record<string, string>>({});
+  const [creatingDeal, setCreatingDeal] = useState(false);
+
+  // Delete confirm
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   if (!client) return <NotFound />;
 
@@ -119,6 +140,115 @@ export default function ClientDetail({ client, deals, notes }: Props) {
   ];
 
   const status = statusConfig[client.status as ClientStatus];
+
+  // ── Edit Client ────────────────────────────────────────
+  const openEditModal = () => {
+    setEditData({
+      name: client.name,
+      company: client.company,
+      email: client.email,
+      phone: client.phone || "",
+      status: client.status,
+    });
+    setEditError("");
+    setEditFieldErrors({});
+    setShowEditModal(true);
+  };
+
+  const handleEdit = async () => {
+    const errors: Record<string, string> = {};
+    if (!editData.name.trim()) errors.name = "Обязательное поле";
+    if (!editData.company.trim()) errors.company = "Обязательное поле";
+    if (!editData.email.trim()) errors.email = "Обязательное поле";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editData.email)) errors.email = "Некорректный email";
+
+    if (Object.keys(errors).length > 0) {
+      setEditFieldErrors(errors);
+      return;
+    }
+
+    setSaving(true);
+    setEditError("");
+    setEditFieldErrors({});
+
+    try {
+      const res = await fetch(`/api/clients/${client.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editData),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setEditError(json.error || "Ошибка сохранения");
+        return;
+      }
+      setShowEditModal(false);
+      router.refresh();
+    } catch {
+      setEditError("Ошибка сети");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Delete Client ──────────────────────────────────────
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/clients/${client.id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        router.push("/clients");
+        router.refresh();
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ── Create Deal ────────────────────────────────────────
+  const handleCreateDeal = async () => {
+    const errors: Record<string, string> = {};
+    if (!dealData.title.trim()) errors.title = "Обязательное поле";
+    if (!dealData.value.trim()) errors.value = "Обязательное поле";
+    else if (isNaN(Number(dealData.value)) || Number(dealData.value) < 0) errors.value = "Введите число";
+
+    if (Object.keys(errors).length > 0) {
+      setDealFieldErrors(errors);
+      return;
+    }
+
+    setCreatingDeal(true);
+    setDealError("");
+    setDealFieldErrors({});
+
+    try {
+      const res = await fetch("/api/deals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: dealData.title,
+          value: Number(dealData.value),
+          stage: dealData.stage,
+          clientId: client.id,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setDealError(json.error || "Ошибка создания");
+        return;
+      }
+      setShowDealModal(false);
+      setDealData({ title: "", value: "", stage: "lead" });
+      router.refresh();
+    } catch {
+      setDealError("Ошибка сети");
+    } finally {
+      setCreatingDeal(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -168,8 +298,24 @@ export default function ClientDetail({ client, deals, notes }: Props) {
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated hover:text-text-primary">Редактировать</button>
-          <button className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover">Новая сделка</button>
+          <button
+            onClick={openEditModal}
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated hover:text-text-primary"
+          >
+            Редактировать
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="rounded-lg border border-danger/30 px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-muted"
+          >
+            Удалить
+          </button>
+          <button
+            onClick={() => { setDealData({ title: "", value: "", stage: "lead" }); setDealError(""); setDealFieldErrors({}); setShowDealModal(true); }}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
+          >
+            Новая сделка
+          </button>
         </div>
       </div>
 
@@ -192,9 +338,82 @@ export default function ClientDetail({ client, deals, notes }: Props) {
         </div>
       </div>
 
-      {activeTab === "deals" && <DealsTab deals={clientDeals} />}
+      {activeTab === "deals" && <DealsTab deals={clientDeals} onRefresh={() => router.refresh()} />}
       {activeTab === "activity" && <ActivityTab activities={activities} />}
-      {activeTab === "notes" && <NotesTab notes={notes} />}
+      {activeTab === "notes" && <NotesTab notes={notes} clientId={client.id} onRefresh={() => router.refresh()} />}
+
+      {/* ── Edit Client Modal ────────────────────────────── */}
+      <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Редактировать клиента">
+        <div className="space-y-4">
+          {editError && (
+            <div className="rounded-lg bg-danger-muted px-4 py-2.5 text-sm text-danger">{editError}</div>
+          )}
+          <FormInput label="Имя *" value={editData.name} onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))} error={editFieldErrors.name} />
+          <FormInput label="Компания *" value={editData.company} onChange={(e) => setEditData((p) => ({ ...p, company: e.target.value }))} error={editFieldErrors.company} />
+          <FormInput label="Email *" type="email" value={editData.email} onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value }))} error={editFieldErrors.email} />
+          <FormInput label="Телефон" type="tel" value={editData.phone} onChange={(e) => setEditData((p) => ({ ...p, phone: e.target.value }))} />
+          <FormSelect
+            label="Статус"
+            value={editData.status}
+            onChange={(e) => setEditData((p) => ({ ...p, status: e.target.value }))}
+            options={[
+              { value: "lead", label: "Лид" },
+              { value: "active", label: "Активный" },
+              { value: "inactive", label: "Неактивный" },
+            ]}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setShowEditModal(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated">Отмена</button>
+            <button onClick={handleEdit} disabled={saving} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50">
+              {saving ? "Сохранение..." : "Сохранить"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── New Deal Modal ───────────────────────────────── */}
+      <Modal open={showDealModal} onClose={() => setShowDealModal(false)} title="Новая сделка">
+        <div className="space-y-4">
+          {dealError && (
+            <div className="rounded-lg bg-danger-muted px-4 py-2.5 text-sm text-danger">{dealError}</div>
+          )}
+          <FormInput label="Название *" placeholder="Внедрение CRM" value={dealData.title} onChange={(e) => setDealData((p) => ({ ...p, title: e.target.value }))} error={dealFieldErrors.title} />
+          <FormInput label="Сумма (₽) *" type="number" placeholder="500000" value={dealData.value} onChange={(e) => setDealData((p) => ({ ...p, value: e.target.value }))} error={dealFieldErrors.value} />
+          <FormSelect
+            label="Этап"
+            value={dealData.stage}
+            onChange={(e) => setDealData((p) => ({ ...p, stage: e.target.value }))}
+            options={[
+              { value: "lead", label: "Лид" },
+              { value: "negotiation", label: "Переговоры" },
+              { value: "proposal", label: "Предложение" },
+              { value: "closed-won", label: "Закрыта (выиграно)" },
+              { value: "closed-lost", label: "Закрыта (проиграно)" },
+            ]}
+          />
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setShowDealModal(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated">Отмена</button>
+            <button onClick={handleCreateDeal} disabled={creatingDeal} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50">
+              {creatingDeal ? "Создание..." : "Создать"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Delete Confirm Modal ─────────────────────────── */}
+      <Modal open={showDeleteConfirm} onClose={() => setShowDeleteConfirm(false)} title="Удалить клиента?">
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Клиент <span className="font-medium text-text-primary">{client.name}</span> и все его сделки и заметки будут удалены безвозвратно.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setShowDeleteConfirm(false)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated">Отмена</button>
+            <button onClick={handleDelete} disabled={deleting} className="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-danger/80 disabled:opacity-50">
+              {deleting ? "Удаление..." : "Удалить"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -212,7 +431,44 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 // ── Deals Tab ────────────────────────────────────────────
 
-function DealsTab({ deals: clientDeals }: { deals: DealData[] }) {
+function DealsTab({ deals: clientDeals, onRefresh }: { deals: DealData[]; onRefresh: () => void }) {
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const handleStageChange = async (dealId: string, newStage: string) => {
+    setUpdatingId(dealId);
+    try {
+      const res = await fetch(`/api/deals/${dealId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: newStage }),
+      });
+      const json = await res.json();
+      if (json.success) onRefresh();
+    } catch {
+      // ignore
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteDeal = async (dealId: string) => {
+    setDeletingId(dealId);
+    try {
+      const res = await fetch(`/api/deals/${dealId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        setConfirmDeleteId(null);
+        onRefresh();
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   if (clientDeals.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-bg-card py-16">
@@ -238,11 +494,46 @@ function DealsTab({ deals: clientDeals }: { deals: DealData[] }) {
               {deal.closedAt && ` · Закрыта ${formatShortDate(deal.closedAt)}`}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="font-mono text-sm font-semibold text-text-primary">{formatCurrency(deal.value)}</span>
-            <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${stageStyles[deal.stage as DealStage] || ""}`}>
-              {stageLabels[deal.stage as DealStage] || deal.stage}
-            </span>
+            <select
+              value={deal.stage}
+              disabled={updatingId === deal.id}
+              onChange={(e) => handleStageChange(deal.id, e.target.value)}
+              className={`rounded-full border-0 px-2.5 py-1 text-[11px] font-medium transition-colors focus:outline-none ${stageStyles[deal.stage as DealStage] || ""} ${updatingId === deal.id ? "opacity-50" : "cursor-pointer"}`}
+            >
+              <option value="lead">Лид</option>
+              <option value="negotiation">Переговоры</option>
+              <option value="proposal">Предложение</option>
+              <option value="closed-won">Закрыта</option>
+              <option value="closed-lost">Проиграна</option>
+            </select>
+            {confirmDeleteId === deal.id ? (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleDeleteDeal(deal.id)}
+                  disabled={deletingId === deal.id}
+                  className="rounded-md bg-danger px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-danger/80 disabled:opacity-50"
+                >
+                  {deletingId === deal.id ? "..." : "Да"}
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-text-muted transition-colors hover:bg-bg-elevated"
+                >
+                  Нет
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteId(deal.id)}
+                className="rounded-lg p-1 text-text-muted transition-colors duration-150 hover:bg-bg-elevated hover:text-danger"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       ))}
@@ -271,15 +562,50 @@ function ActivityTab({ activities }: { activities: ActivityEvent[] }) {
 
 // ── Notes Tab ────────────────────────────────────────────
 
-function NotesTab({ notes }: { notes: NoteData[] }) {
+function NotesTab({ notes, clientId, onRefresh }: { notes: NoteData[]; clientId: string; onRefresh: () => void }) {
   const [noteText, setNoteText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleAddNote = async () => {
+    if (!noteText.trim()) return;
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: noteText, clientId }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setError(json.error || "Ошибка добавления");
+        return;
+      }
+      setNoteText("");
+      onRefresh();
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-border bg-bg-card p-5">
         <textarea value={noteText} onChange={(e) => setNoteText(e.target.value)} placeholder="Добавить заметку..." rows={3} className="w-full resize-none rounded-lg border border-border bg-bg-base p-3 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 focus:border-accent/40 focus:outline-none" />
+        {error && <p className="mt-2 text-xs text-danger">{error}</p>}
         <div className="mt-3 flex justify-end">
-          <button disabled={!noteText.trim()} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent">Добавить</button>
+          <button
+            onClick={handleAddNote}
+            disabled={!noteText.trim() || submitting}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover disabled:opacity-40 disabled:hover:bg-accent"
+          >
+            {submitting ? "Добавление..." : "Добавить"}
+          </button>
         </div>
       </div>
       <div className="space-y-3">
