@@ -1,4 +1,5 @@
 import Topbar from "@/components/Topbar";
+import ClientDetail from "@/components/ClientDetail";
 
 export default async function ClientDetailPage({
   params,
@@ -11,7 +12,7 @@ export default async function ClientDetailPage({
     <>
       <Topbar title="Клиент" />
       <div className="p-8">
-        <p className="text-text-secondary">Профиль клиента #{id}</p>
+        <ClientDetail clientId={id} />
       </div>
     </>
   );
