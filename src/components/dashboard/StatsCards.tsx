@@ -1,5 +1,7 @@
 "use client";
 
+import { useCallback } from "react";
+import { StaggerContainer, StaggerItem, CountUp } from "@/components/animations";
 import type { DealData, MonthlyDataPoint } from "@/lib/types";
 
 interface StatsCardsProps {
@@ -74,10 +76,16 @@ export default function StatsCards({ deals, monthlyData, totalClients, activeCli
   const closedTotal = closedWon + closedLost;
   const conversion = closedTotal > 0 ? (closedWon / closedTotal) * 100 : 0;
 
+  const currencyFormatter = useCallback(
+    (n: number) => formatCurrency(n),
+    []
+  );
+
   const stats = [
     {
       label: "Выручка за месяц",
-      value: formatCurrency(currentMonth.revenue),
+      rawValue: currentMonth.revenue,
+      formatter: currencyFormatter,
       extra: <TrendBadge value={revenueTrend} />,
       icon: (
         <svg className="h-8 w-8 text-accent-secondary/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -87,7 +95,7 @@ export default function StatsCards({ deals, monthlyData, totalClients, activeCli
     },
     {
       label: "Активные сделки",
-      value: String(activeDeals.length),
+      rawValue: activeDeals.length,
       extra: (
         <span className="text-sm text-text-secondary">
           из них {proposalDeals.length} на финале
@@ -101,7 +109,7 @@ export default function StatsCards({ deals, monthlyData, totalClients, activeCli
     },
     {
       label: "Новые клиенты",
-      value: String(currentMonth.newClients),
+      rawValue: currentMonth.newClients,
       extra: <TrendBadge value={newClientsTrend} />,
       icon: (
         <svg className="h-8 w-8 text-success/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -111,7 +119,8 @@ export default function StatsCards({ deals, monthlyData, totalClients, activeCli
     },
     {
       label: "Конверсия",
-      value: `${conversion.toFixed(1)}%`,
+      rawValue: conversion,
+      isConversion: true,
       extra: (
         <span className="text-sm text-text-secondary">
           {activeClients} из {totalClients} активных
@@ -123,33 +132,41 @@ export default function StatsCards({ deals, monthlyData, totalClients, activeCli
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <StaggerContainer className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
-        <div key={stat.label} className="card-glow relative overflow-hidden rounded-xl border border-border bg-bg-card p-6">
-          <div className="absolute right-4 top-4">
-            {stat.hasRing ? (
-              <div className="relative">
-                {stat.icon}
-                <span className="absolute inset-0 flex items-center justify-center rotate-90 font-mono text-[11px] font-semibold text-accent">
-                  {stat.value}
-                </span>
-              </div>
-            ) : (
-              stat.icon
-            )}
-          </div>
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-text-muted">
-            {stat.label}
-          </p>
-          {!stat.hasRing && (
-            <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-text-primary">
-              {stat.value}
+        <StaggerItem key={stat.label}>
+          <div className="card-glow relative overflow-hidden rounded-xl border border-border bg-bg-card p-6">
+            <div className="absolute right-4 top-4">
+              {stat.hasRing ? (
+                <div className="relative">
+                  {stat.icon}
+                  <span className="absolute inset-0 flex items-center justify-center rotate-90 font-mono text-[11px] font-semibold text-accent">
+                    <CountUp
+                      value={stat.rawValue}
+                      formatter={(n) => `${n.toFixed(1)}%`}
+                    />
+                  </span>
+                </div>
+              ) : (
+                stat.icon
+              )}
+            </div>
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-text-muted">
+              {stat.label}
             </p>
-          )}
-          {stat.hasRing && <div className="mt-2 h-9" />}
-          <div className="mt-2">{stat.extra}</div>
-        </div>
+            {!stat.hasRing && (
+              <p className="mt-2 font-mono text-3xl font-bold tracking-tight text-text-primary">
+                <CountUp
+                  value={stat.rawValue}
+                  formatter={stat.formatter}
+                />
+              </p>
+            )}
+            {stat.hasRing && <div className="mt-2 h-9" />}
+            <div className="mt-2">{stat.extra}</div>
+          </div>
+        </StaggerItem>
       ))}
-    </div>
+    </StaggerContainer>
   );
 }

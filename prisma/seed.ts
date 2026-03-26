@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcryptjs from "bcryptjs";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -12,6 +13,18 @@ async function main() {
   await prisma.note.deleteMany();
   await prisma.deal.deleteMany();
   await prisma.client.deleteMany();
+  await prisma.user.deleteMany();
+
+  // ── Default User ───────────────────────────────────────
+  const hashedPassword = await bcryptjs.hash("demo123", 10);
+  await prisma.user.create({
+    data: {
+      name: "Алихан Веров",
+      email: "admin@pulse.ru",
+      password: hashedPassword,
+    },
+  });
+  console.log("✓ Seeded default user (admin@pulse.ru / demo123)");
 
   // ── Clients ──────────────────────────────────────────
 

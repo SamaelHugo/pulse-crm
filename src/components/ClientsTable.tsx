@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import type { ClientData } from "@/lib/types";
 import Modal, { FormInput, FormSelect } from "@/components/Modal";
 
@@ -375,6 +376,7 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
                       onCheck={() => toggleOne(client.id)}
                       onClick={() => router.push(`/clients/${client.id}`)}
                       striped={idx % 2 === 1}
+                      index={idx}
                     />
                   ))}
                 </tbody>
@@ -544,17 +546,22 @@ function ClientRow({
   onCheck,
   onClick,
   striped,
+  index,
 }: {
   client: ClientData;
   checked: boolean;
   onCheck: () => void;
   onClick: () => void;
   striped: boolean;
+  index: number;
 }) {
   const status = statusConfig[client.status as ClientStatus];
 
   return (
-    <tr
+    <motion.tr
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.03, ease: "easeOut" }}
       className={`border-b border-border/50 transition-colors duration-100 last:border-b-0 hover:bg-white/[0.03] cursor-pointer ${
         striped ? "bg-white/[0.01]" : ""
       }`}
@@ -617,7 +624,7 @@ function ClientRow({
           </svg>
         </button>
       </td>
-    </tr>
+    </motion.tr>
   );
 }
 

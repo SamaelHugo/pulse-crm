@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import type { DealData } from "@/lib/types";
 import Modal, { FormInput, FormSelect, FormField } from "@/components/Modal";
 
@@ -720,10 +721,15 @@ function KanbanColumn({
 
       {/* Cards */}
       <div className="flex-1 space-y-2 overflow-y-auto p-3" style={{ maxHeight: "calc(100vh - 380px)" }}>
-        {stageDeals.map((deal) => {
+        {stageDeals.map((deal, idx) => {
           return (
-            <DealCard
+            <motion.div
               key={deal.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: idx * 0.04, ease: "easeOut" }}
+            >
+            <DealCard
               deal={deal}
               stage={stage}
               clientName={deal.client?.name}
@@ -735,6 +741,7 @@ function KanbanColumn({
               onDeleteConfirm={onDeleteConfirm}
               onDeleteCancel={onDeleteCancel}
             />
+            </motion.div>
           );
         })}
         {stageDeals.length === 0 && (

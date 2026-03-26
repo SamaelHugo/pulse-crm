@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import DashboardLayout from "@/components/DashboardLayout";
+import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pulse CRM — Управление продажами",
+  title: {
+    default: "Pulse CRM — Управление продажами",
+    template: "%s",
+  },
   description: "CRM-система для управления клиентами, сделками и аналитики продаж",
 };
 
@@ -29,7 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <DashboardLayout>{children}</DashboardLayout>
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

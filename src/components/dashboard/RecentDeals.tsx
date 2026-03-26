@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import type { DealData } from "@/lib/types";
 
 type DealStage = "lead" | "negotiation" | "proposal" | "closed-won" | "closed-lost";
@@ -82,9 +83,12 @@ export default function RecentDeals({ deals }: { deals: DealData[] }) {
             </tr>
           </thead>
           <tbody>
-            {deals.map((deal) => (
-              <tr
+            {deals.map((deal, idx) => (
+              <motion.tr
                 key={deal.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.04, ease: "easeOut" }}
                 className="border-b border-border/50 transition-colors duration-100 last:border-b-0 hover:bg-white/[0.02]"
               >
                 <td className="px-6 py-4">
@@ -120,7 +124,7 @@ export default function RecentDeals({ deals }: { deals: DealData[] }) {
                     {formatRelativeDate(deal.createdAt)}
                   </span>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>

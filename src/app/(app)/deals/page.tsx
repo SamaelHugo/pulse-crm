@@ -1,8 +1,13 @@
 export const dynamic = "force-dynamic";
 
+import { Metadata } from "next";
 import Topbar from "@/components/Topbar";
 import DealsView from "@/components/DealsView";
 import { getDealsData } from "@/lib/queries";
+
+export const metadata: Metadata = {
+  title: "Сделки — Pulse CRM",
+};
 
 export default async function DealsPage() {
   const deals = await getDealsData();

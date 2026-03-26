@@ -1,6 +1,11 @@
+import { Metadata } from "next";
 import Topbar from "@/components/Topbar";
 import ClientDetail from "@/components/ClientDetail";
 import { getClientDetail } from "@/lib/queries";
+
+export const metadata: Metadata = {
+  title: "Клиент — Pulse CRM",
+};
 
 export default async function ClientDetailPage({
   params,

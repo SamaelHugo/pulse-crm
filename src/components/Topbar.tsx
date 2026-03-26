@@ -1,12 +1,26 @@
 "use client";
 
+import { useSession } from "next-auth/react";
+
 interface TopbarProps {
   title: string;
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2);
+}
+
 export default function Topbar({ title }: TopbarProps) {
+  const { data: session } = useSession();
+  const userName = session?.user?.name || "АВ";
+  const initials = getInitials(userName);
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-bg-base/80 px-8 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-bg-base/80 pl-14 pr-8 backdrop-blur-md lg:px-8">
       {/* Page title */}
       <h1 className="text-lg font-semibold text-text-primary">{title}</h1>
 
@@ -60,7 +74,7 @@ export default function Topbar({ title }: TopbarProps) {
 
         {/* User avatar */}
         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-muted text-xs font-semibold text-accent">
-          АВ
+          {initials}
         </div>
       </div>
     </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ModalProps {
   open: boolean;
@@ -25,34 +26,46 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
-      }}
-    >
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-bg-base shadow-2xl shadow-black/40">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-text-muted transition-colors duration-150 hover:bg-bg-elevated hover:text-text-secondary"
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={overlayRef}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={(e) => {
+            if (e.target === overlayRef.current) onClose();
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="w-full max-w-lg rounded-2xl border border-border bg-bg-base shadow-2xl shadow-black/40"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1.5 text-text-muted transition-colors duration-150 hover:bg-bg-elevated hover:text-text-secondary"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-        {/* Body */}
-        <div className="px-6 py-5">{children}</div>
-      </div>
-    </div>
+            {/* Body */}
+            <div className="px-6 py-5">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

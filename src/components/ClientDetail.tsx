@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import type { ClientData, DealData, NoteData } from "@/lib/types";
 import Modal, { FormInput, FormSelect } from "@/components/Modal";
 
@@ -338,9 +339,19 @@ export default function ClientDetail({ client, deals, notes }: Props) {
         </div>
       </div>
 
-      {activeTab === "deals" && <DealsTab deals={clientDeals} onRefresh={() => router.refresh()} />}
-      {activeTab === "activity" && <ActivityTab activities={activities} />}
-      {activeTab === "notes" && <NotesTab notes={notes} clientId={client.id} onRefresh={() => router.refresh()} />}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, x: 8 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
+          {activeTab === "deals" && <DealsTab deals={clientDeals} onRefresh={() => router.refresh()} />}
+          {activeTab === "activity" && <ActivityTab activities={activities} />}
+          {activeTab === "notes" && <NotesTab notes={notes} clientId={client.id} onRefresh={() => router.refresh()} />}
+        </motion.div>
+      </AnimatePresence>
 
       {/* ── Edit Client Modal ────────────────────────────── */}
       <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title="Редактировать клиента">
