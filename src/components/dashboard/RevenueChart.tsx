@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { monthlyData } from "@/data/mockData";
+import type { MonthlyDataPoint } from "@/lib/types";
 
 type Period = "6m" | "1y" | "all";
 
@@ -51,7 +51,7 @@ function CustomTooltip({
   );
 }
 
-export default function RevenueChart() {
+export default function RevenueChart({ monthlyData }: { monthlyData: MonthlyDataPoint[] }) {
   const [period, setPeriod] = useState<Period>("1y");
 
   const data =

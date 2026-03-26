@@ -6,7 +6,12 @@
       "Bash(mv public:*)",
       "Bash(npm install:*)",
       "Bash(npx next:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(npx prisma:*)",
+      "Bash(ls E:/pulse-crm/src/generated/prisma/index*)",
+      "Bash(grep -l PrismaClient E:/pulse-crm/src/generated/prisma/*.ts)",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:www.prisma.io)"
     ]
   }
 }

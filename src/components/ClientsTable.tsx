@@ -2,9 +2,11 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { clients, type Client, type ClientStatus } from "@/data/mockData";
+import type { ClientData } from "@/lib/types";
 
 // ── Helpers ──────────────────────────────────────────────
+
+type ClientStatus = "active" | "lead" | "inactive";
 
 const statusConfig: Record<
   ClientStatus,
@@ -48,8 +50,9 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("ru-RU") + " ₽";
 }
 
-function formatRelativeDate(date: Date): string {
-  const now = new Date("2026-03-27");
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
@@ -86,7 +89,7 @@ type SortKey = "name" | "revenue" | "lastContact";
 
 // ── Component ────────────────────────────────────────────
 
-export default function ClientsTable() {
+export default function ClientsTable({ clients }: { clients: ClientData[] }) {
   const router = useRouter();
 
   const [search, setSearch] = useState("");
@@ -137,16 +140,16 @@ export default function ClientsTable() {
         case "name":
           return a.name.localeCompare(b.name, "ru");
         case "revenue":
-          return b.revenue - a.revenue;
+          return (b.revenue ?? 0) - (a.revenue ?? 0);
         case "lastContact":
-          return b.lastContact.getTime() - a.lastContact.getTime();
+          return new Date(b.lastContact ?? 0).getTime() - new Date(a.lastContact ?? 0).getTime();
         default:
           return 0;
       }
     });
 
     return result;
-  }, [debouncedSearch, statusFilter, sortKey]);
+  }, [clients, debouncedSearch, statusFilter, sortKey]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
@@ -419,6 +422,10 @@ export default function ClientsTable() {
 
 // ── Table Row ────────────────────────────────────────────
 
+function getInitials(name: string): string {
+  return name.split(" ").map((w) => w[0]).join("").slice(0, 2);
+}
+
 function ClientRow({
   client,
   checked,
@@ -426,13 +433,13 @@ function ClientRow({
   onClick,
   striped,
 }: {
-  client: Client;
+  client: ClientData;
   checked: boolean;
   onCheck: () => void;
   onClick: () => void;
   striped: boolean;
 }) {
-  const status = statusConfig[client.status];
+  const status = statusConfig[client.status as ClientStatus];
 
   return (
     <tr
@@ -453,7 +460,7 @@ function ClientRow({
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${getAvatarColor(client.name)}`}
           >
-            {client.avatar}
+            {getInitials(client.name)}
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-text-primary">
@@ -468,28 +475,28 @@ function ClientRow({
       </td>
       <td className="px-4 py-3" onClick={onClick}>
         <span
-          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${status.style}`}
+          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${status?.style || ""}`}
         >
-          {status.label}
+          {status?.label || client.status}
         </span>
       </td>
       <td
         className="px-4 py-3 text-center font-mono text-sm text-text-secondary"
         onClick={onClick}
       >
-        {client.totalDeals}
+        {client.totalDeals ?? 0}
       </td>
       <td
         className="px-4 py-3 text-right font-mono text-sm font-medium text-text-primary"
         onClick={onClick}
       >
-        {formatCurrency(client.revenue)}
+        {formatCurrency(client.revenue ?? 0)}
       </td>
       <td
         className="px-4 py-3 text-right text-xs text-text-muted"
         onClick={onClick}
       >
-        {formatRelativeDate(client.lastContact)}
+        {client.lastContact ? formatRelativeDate(client.lastContact) : "—"}
       </td>
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <button className="rounded-lg p-1.5 text-text-muted transition-colors duration-150 hover:bg-bg-elevated hover:text-text-secondary">
@@ -508,10 +515,10 @@ function ClientCard({
   client,
   onClick,
 }: {
-  client: Client;
+  client: ClientData;
   onClick: () => void;
 }) {
-  const status = statusConfig[client.status];
+  const status = statusConfig[client.status as ClientStatus];
 
   return (
     <button
@@ -522,7 +529,7 @@ function ClientCard({
         <div
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${getAvatarColor(client.name)}`}
         >
-          {client.avatar}
+          {getInitials(client.name)}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
@@ -530,24 +537,24 @@ function ClientCard({
               {client.name}
             </p>
             <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status.style}`}
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${status?.style || ""}`}
             >
-              {status.label}
+              {status?.label || client.status}
             </span>
           </div>
           <p className="mt-0.5 text-xs text-text-muted">{client.company}</p>
 
           <div className="mt-3 flex items-center justify-between text-xs">
             <span className="text-text-muted">
-              {client.totalDeals} сделок
+              {client.totalDeals ?? 0} сделок
             </span>
             <span className="font-mono font-medium text-text-primary">
-              {formatCurrency(client.revenue)}
+              {formatCurrency(client.revenue ?? 0)}
             </span>
           </div>
           <div className="mt-1.5 flex items-center justify-between text-xs text-text-muted">
             <span>{client.email}</span>
-            <span>{formatRelativeDate(client.lastContact)}</span>
+            <span>{client.lastContact ? formatRelativeDate(client.lastContact) : "—"}</span>
           </div>
         </div>
       </div>

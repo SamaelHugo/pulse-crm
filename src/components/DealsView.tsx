@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { deals, clients, type Deal, type DealStage } from "@/data/mockData";
+import type { DealData } from "@/lib/types";
 
 // ── Config ───────────────────────────────────────────────
+
+type DealStage = "lead" | "negotiation" | "proposal" | "closed-won" | "closed-lost";
 
 const stages: {
   key: DealStage;
@@ -62,7 +64,6 @@ const stages: {
 ];
 
 const stageMap = new Map(stages.map((s) => [s.key, s]));
-const clientMap = new Map(clients.map((c) => [c.id, c]));
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -78,16 +79,16 @@ function formatFullCurrency(value: number): string {
   return value.toLocaleString("ru-RU").replace(/,/g, " ") + " ₽";
 }
 
-function formatShortDate(date: Date): string {
-  return date.toLocaleDateString("ru-RU", {
+function formatShortDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",
   });
 }
 
-function formatTableDate(date: Date | null): string {
-  if (!date) return "—";
-  return date.toLocaleDateString("ru-RU", {
+function formatTableDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -101,7 +102,7 @@ type SortKey = "title" | "value" | "createdAt";
 
 // ── Component ────────────────────────────────────────────
 
-export default function DealsView() {
+export default function DealsView({ deals }: { deals: DealData[] }) {
   const [view, setView] = useState<View>("kanban");
   const [stageFilter, setStageFilter] = useState<DealStage | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
@@ -123,8 +124,8 @@ export default function DealsView() {
           (d) =>
             d.stage === "closed-won" &&
             d.closedAt &&
-            d.closedAt.getMonth() === 2 &&
-            d.closedAt.getFullYear() === 2026
+            new Date(d.closedAt).getMonth() === 2 &&
+            new Date(d.closedAt).getFullYear() === 2026
         )
         .reduce((s, d) => s + d.value, 0),
     []
@@ -137,8 +138,8 @@ export default function DealsView() {
           (d) =>
             d.stage === "closed-lost" &&
             d.closedAt &&
-            d.closedAt.getMonth() === 2 &&
-            d.closedAt.getFullYear() === 2026
+            new Date(d.closedAt).getMonth() === 2 &&
+            new Date(d.closedAt).getFullYear() === 2026
         )
         .reduce((s, d) => s + d.value, 0),
     []
@@ -152,7 +153,7 @@ export default function DealsView() {
 
   // Grouped deals for kanban
   const grouped = useMemo(() => {
-    const map: Record<DealStage, Deal[]> = {
+    const map: Record<DealStage, DealData[]> = {
       lead: [],
       negotiation: [],
       proposal: [],
@@ -160,14 +161,13 @@ export default function DealsView() {
       "closed-lost": [],
     };
     for (const deal of deals) {
-      map[deal.stage].push(deal);
+      if (map[deal.stage as DealStage]) map[deal.stage as DealStage].push(deal);
     }
-    // Sort each group by date
     for (const key of Object.keys(map) as DealStage[]) {
-      map[key].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      map[key].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return map;
-  }, []);
+  }, [deals]);
 
   // Filtered + sorted for table
   const tableDeals = useMemo(() => {
@@ -183,14 +183,14 @@ export default function DealsView() {
         case "value":
           return b.value - a.value;
         case "createdAt":
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         default:
           return 0;
       }
     });
 
     return result;
-  }, [stageFilter, sortKey]);
+  }, [deals, stageFilter, sortKey]);
 
   return (
     <div className="space-y-6">
@@ -347,14 +347,13 @@ export default function DealsView() {
             </div>
             <div className="space-y-3">
               {grouped[mobileStage].map((deal) => {
-                const stage = stageMap.get(deal.stage)!;
-                const client = clientMap.get(deal.clientId);
+                const stage = stageMap.get(deal.stage as DealStage)!;
                 return (
                   <DealCard
                     key={deal.id}
                     deal={deal}
                     stage={stage}
-                    clientName={client?.name}
+                    clientName={deal.client?.name}
                   />
                 );
               })}
@@ -408,8 +407,7 @@ export default function DealsView() {
               </thead>
               <tbody>
                 {tableDeals.map((deal, idx) => {
-                  const client = clientMap.get(deal.clientId);
-                  const stage = stageMap.get(deal.stage)!;
+                  const stage = stageMap.get(deal.stage as DealStage)!;
                   return (
                     <tr
                       key={deal.id}
@@ -423,10 +421,10 @@ export default function DealsView() {
                       <td className="px-4 py-3.5">
                         <div className="min-w-0">
                           <p className="text-sm text-text-secondary">
-                            {client?.name}
+                            {deal.client?.name}
                           </p>
                           <p className="text-xs text-text-muted">
-                            {client?.company}
+                            {deal.client?.company}
                           </p>
                         </div>
                       </td>
@@ -489,7 +487,7 @@ function KanbanColumn({
   total,
 }: {
   stage: (typeof stages)[number];
-  deals: Deal[];
+  deals: DealData[];
   total: number;
 }) {
   return (
@@ -511,13 +509,12 @@ function KanbanColumn({
       {/* Cards */}
       <div className="flex-1 space-y-2 overflow-y-auto p-3" style={{ maxHeight: "calc(100vh - 380px)" }}>
         {stageDeals.map((deal) => {
-          const client = clientMap.get(deal.clientId);
           return (
             <DealCard
               key={deal.id}
               deal={deal}
               stage={stage}
-              clientName={client?.name}
+              clientName={deal.client?.name}
             />
           );
         })}
@@ -538,7 +535,7 @@ function DealCard({
   stage,
   clientName,
 }: {
-  deal: Deal;
+  deal: DealData;
   stage: (typeof stages)[number];
   clientName?: string;
 }) {

@@ -1,7 +1,9 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import { deals, type DealStage } from "@/data/mockData";
+import type { DealData } from "@/lib/types";
+
+type DealStage = "lead" | "negotiation" | "proposal" | "closed-won" | "closed-lost";
 
 const stageConfig: Record<
   DealStage,
@@ -53,7 +55,7 @@ function CustomTooltip({
   );
 }
 
-export default function DealsPieChart() {
+export default function DealsPieChart({ deals }: { deals: DealData[] }) {
   const stageCounts = (Object.keys(stageConfig) as DealStage[]).map(
     (stage) => ({
       name: stageConfig[stage].label,

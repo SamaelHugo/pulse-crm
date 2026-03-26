@@ -1,5 +1,6 @@
 import Topbar from "@/components/Topbar";
 import ClientDetail from "@/components/ClientDetail";
+import { getClientDetail } from "@/lib/queries";
 
 export default async function ClientDetailPage({
   params,
@@ -7,12 +8,13 @@ export default async function ClientDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { client, deals, notes } = await getClientDetail(id);
 
   return (
     <>
       <Topbar title="Клиент" />
       <div className="p-8">
-        <ClientDetail clientId={id} />
+        <ClientDetail client={client} deals={deals} notes={notes} />
       </div>
     </>
   );
