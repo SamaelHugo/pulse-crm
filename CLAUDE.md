@@ -47,7 +47,7 @@ Demo project for web developer portfolio. Must look like a real SaaS product, no
 - [x] Prompt 1: Dashboard page (stats cards + charts)
 - [x] Prompt 2: Clients table page
 - [x] Prompt 3: Client detail page
-- [ ] Prompt 4: Deals page (pipeline view)
+- [x] Prompt 4: Deals page (pipeline view)
 - [ ] Prompt 5: Database (Prisma + Supabase + seed data)
 - [ ] Prompt 6: API routes (CRUD)
 - [ ] Prompt 7: Auth (NextAuth)
