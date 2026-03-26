@@ -5,7 +5,8 @@
       "Bash(mv app:*)",
       "Bash(mv public:*)",
       "Bash(npm install:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm ls:*)"
     ]
   }
 }

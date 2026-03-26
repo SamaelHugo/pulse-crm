@@ -44,7 +44,7 @@ Demo project for web developer portfolio. Must look like a real SaaS product, no
 
 ## Progress
 - [x] Prompt 0: Design system + Layout (sidebar + topbar)
-- [ ] Prompt 1: Dashboard page (stats cards + charts)
+- [x] Prompt 1: Dashboard page (stats cards + charts)
 - [ ] Prompt 2: Clients table page
 - [ ] Prompt 3: Client detail page
 - [ ] Prompt 4: Deals page (pipeline view)
