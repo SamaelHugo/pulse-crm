@@ -20,12 +20,25 @@ export default function Topbar({ title }: TopbarProps) {
   const initials = getInitials(userName);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-bg-base/80 pl-14 pr-8 backdrop-blur-md lg:px-8">
-      {/* Page title */}
-      <h1 className="text-lg font-semibold text-text-primary">{title}</h1>
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-border bg-bg-base/80 px-4 backdrop-blur-md lg:h-16 lg:gap-4 lg:px-8">
+      {/* Hamburger button — mobile only */}
+      <button
+        onClick={() => {
+          // Dispatch custom event to open sidebar from DashboardLayout
+          window.dispatchEvent(new CustomEvent("toggle-sidebar"));
+        }}
+        className="shrink-0 rounded-lg p-1.5 text-text-secondary transition-colors hover:bg-bg-elevated lg:hidden"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
 
-      {/* Search */}
-      <div className="mx-auto w-full max-w-md">
+      {/* Page title */}
+      <h1 className="text-base font-semibold text-text-primary lg:text-lg">{title}</h1>
+
+      {/* Search — hidden on mobile */}
+      <div className="mx-auto hidden w-full max-w-md md:block">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
@@ -52,7 +65,7 @@ export default function Topbar({ title }: TopbarProps) {
       </div>
 
       {/* Right side */}
-      <div className="flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2 lg:gap-3">
         {/* Notification bell */}
         <button className="relative rounded-lg p-2 text-text-secondary transition-colors duration-150 hover:bg-white/[0.04] hover:text-text-primary">
           <svg

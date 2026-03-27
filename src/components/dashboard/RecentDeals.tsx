@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { DealData } from "@/lib/types";
 
@@ -63,6 +64,8 @@ function getInitials(name: string): string {
 }
 
 export default function RecentDeals({ deals }: { deals: DealData[] }) {
+  const router = useRouter();
+
   return (
     <div className="card-glow rounded-xl border border-border bg-bg-card">
       <div className="border-b border-border px-6 py-4">
@@ -89,7 +92,8 @@ export default function RecentDeals({ deals }: { deals: DealData[] }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.04, ease: "easeOut" }}
-                className="border-b border-border/50 transition-colors duration-100 last:border-b-0 hover:bg-white/[0.02]"
+                onClick={() => deal.client && router.push(`/clients/${deal.clientId}`)}
+                className="cursor-pointer border-b border-border/50 transition-colors duration-100 last:border-b-0 hover:bg-white/[0.05]"
               >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">

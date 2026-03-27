@@ -15,7 +15,7 @@ export default async function ClientsPage() {
   return (
     <>
       <Topbar title="Клиенты" />
-      <div className="p-8">
+      <div className="p-4 lg:p-8">
         <ClientsTable clients={clients} />
       </div>
     </>

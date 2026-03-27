@@ -298,22 +298,22 @@ export default function ClientDetail({ client, deals, notes }: Props) {
             </div>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex w-full gap-2 sm:w-auto sm:gap-3">
           <button
             onClick={openEditModal}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated hover:text-text-primary"
+            className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors duration-150 hover:bg-bg-elevated hover:text-text-primary sm:flex-none sm:px-4"
           >
             Редактировать
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="rounded-lg border border-danger/30 px-4 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-muted"
+            className="flex-1 rounded-lg border border-danger/30 px-3 py-2 text-sm font-medium text-danger transition-colors duration-150 hover:bg-danger-muted sm:flex-none sm:px-4"
           >
             Удалить
           </button>
           <button
             onClick={() => { setDealData({ title: "", value: "", stage: "lead" }); setDealError(""); setDealFieldErrors({}); setShowDealModal(true); }}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover"
+            className="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-accent-hover sm:flex-none sm:px-4"
           >
             Новая сделка
           </button>

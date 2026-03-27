@@ -267,7 +267,7 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
       {/* ── Toolbar ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 overflow-x-auto pb-1 md:flex-nowrap">
         {/* Search */}
-        <div className="relative min-w-[260px] flex-1 md:max-w-[300px]">
+        <div className="relative min-w-0 w-full flex-1 md:max-w-[300px]">
           <svg
             className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
             fill="none"
@@ -397,7 +397,7 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
 
           {/* ── Pagination ───────────────────────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-text-muted">
+            <p className="text-xs text-text-muted sm:text-sm">
               Показано{" "}
               <span className="font-medium text-text-secondary">
                 {(page - 1) * perPage + 1}–
@@ -410,11 +410,11 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
             </p>
 
             <div className="flex items-center gap-2">
-              {/* Per page */}
+              {/* Per page — hidden on mobile */}
               <select
                 value={perPage}
                 onChange={(e) => setPerPage(Number(e.target.value))}
-                className="rounded-lg border border-border bg-bg-card px-2 py-1.5 text-xs text-text-secondary focus:border-accent/40 focus:outline-none"
+                className="hidden rounded-lg border border-border bg-bg-card px-2 py-1.5 text-xs text-text-secondary focus:border-accent/40 focus:outline-none sm:block"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -432,26 +432,33 @@ export default function ClientsTable({ clients }: { clients: ClientData[] }) {
                 </svg>
               </button>
 
-              {/* Page numbers */}
-              {pageNumbers.map((n, i) =>
-                n === "..." ? (
-                  <span key={`e${i}`} className="px-1 text-xs text-text-muted">
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors duration-150 ${
-                      page === n
-                        ? "bg-accent text-white"
-                        : "border border-border bg-bg-card text-text-secondary hover:bg-bg-elevated"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                )
-              )}
+              {/* Current page indicator — mobile only */}
+              <span className="text-xs font-medium text-text-secondary sm:hidden">
+                {page} / {totalPages}
+              </span>
+
+              {/* Page numbers — hidden on mobile */}
+              <div className="hidden items-center gap-2 sm:flex">
+                {pageNumbers.map((n, i) =>
+                  n === "..." ? (
+                    <span key={`e${i}`} className="px-1 text-xs text-text-muted">
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n)}
+                      className={`h-8 w-8 rounded-lg text-xs font-medium transition-colors duration-150 ${
+                        page === n
+                          ? "bg-accent text-white"
+                          : "border border-border bg-bg-card text-text-secondary hover:bg-bg-elevated"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              </div>
 
               {/* Next */}
               <button

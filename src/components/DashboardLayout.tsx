@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 
 export default function DashboardLayout({
@@ -9,6 +9,25 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Lock body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (sidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
+
+  // Listen for toggle-sidebar event from Topbar hamburger
+  useEffect(() => {
+    const handler = () => setSidebarOpen((prev) => !prev);
+    window.addEventListener("toggle-sidebar", handler);
+    return () => window.removeEventListener("toggle-sidebar", handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-bg-base bg-dot-pattern">
@@ -21,16 +40,6 @@ export default function DashboardLayout({
       )}
 
       <Sidebar mobileOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed left-4 top-4 z-20 rounded-lg border border-border bg-bg-card p-2 text-text-secondary transition-colors hover:bg-bg-elevated lg:hidden"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
-      </button>
 
       <main className="min-h-screen lg:ml-[260px]">
         {children}

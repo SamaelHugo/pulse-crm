@@ -25,7 +25,7 @@ export default function DashboardContent({
 }: Props) {
   return (
     <PageTransition>
-      <div className="space-y-6 p-8">
+      <div className="space-y-4 p-4 lg:space-y-6 lg:p-8">
         <StatsCards
           deals={deals}
           monthlyData={monthlyData}

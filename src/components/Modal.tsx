@@ -35,7 +35,7 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4"
           onClick={(e) => {
             if (e.target === overlayRef.current) onClose();
           }}
@@ -45,7 +45,7 @@ export default function Modal({ open, onClose, title, children }: ModalProps) {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="w-full max-w-lg rounded-2xl border border-border bg-bg-base shadow-2xl shadow-black/40"
+            className="w-full max-w-lg rounded-2xl border border-border bg-bg-base shadow-2xl shadow-black/40 max-md:max-h-[100dvh] max-md:overflow-y-auto max-md:rounded-none max-md:border-0 md:max-h-[90vh] md:overflow-y-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
